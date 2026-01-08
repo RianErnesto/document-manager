@@ -2,6 +2,9 @@
 Componente de caixa de mensagem.
 """
 import customtkinter as ctk
+import os
+import sys
+from pathlib import Path
 from typing import Callable, Optional
 
 from ..config import COLORS, FONTS, DIMENSIONS
@@ -88,6 +91,14 @@ class MessageBox(ctk.CTkToplevel):
         # Modal
         self.transient(master)
         self.grab_set()
+
+        # Ícone
+        icon_path = self._get_icon_path()
+        if icon_path and os.path.exists(icon_path):
+            try:
+                self.after(200, lambda: self.iconbitmap(icon_path))
+            except Exception:
+                pass
 
         # Configuração de fundo
         self.configure(fg_color=COLORS["surface"])
@@ -190,6 +201,15 @@ class MessageBox(ctk.CTkToplevel):
     def get_result(self) -> bool:
         """Retorna o resultado da caixa de mensagem."""
         return self._result
+
+    def _get_icon_path(self) -> str:
+        """Retorna o caminho do ícone."""
+        if getattr(sys, 'frozen', False):
+            base_path = Path(sys.executable).parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")
+        else:
+            base_path = Path(__file__).parent.parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")
 
 
 def show_message(

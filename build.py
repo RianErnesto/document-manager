@@ -17,65 +17,31 @@ def clean_build_dirs():
             print(f"Removendo diretório: {dir_name}")
             shutil.rmtree(dir_path)
 
-    # Remove spec file
-    spec_file = Path("DocumentManager.spec")
-    if spec_file.exists():
-        print("Removendo arquivo spec anterior")
-        spec_file.unlink()
-
 
 def build_exe():
     """Gera o executável."""
     print("=" * 50)
-    print("DOCUMENT MANAGER - Build Script")
+    print("AMAZON INFORMÁTICA - Document Manager Build")
     print("=" * 50)
 
     # Limpa builds anteriores
-    print("\n[1/4] Limpando builds anteriores...")
+    print("\n[1/3] Limpando builds anteriores...")
     clean_build_dirs()
 
-    # Verifica se o ícone existe
-    icon_path = Path("assets/icon.ico")
-    icon_option = f"--icon={icon_path}" if icon_path.exists() else ""
+    # Verifica se o arquivo .spec existe
+    spec_file = Path("DocumentManager.spec")
+    if not spec_file.exists():
+        print("\n[ERRO] Arquivo DocumentManager.spec não encontrado!")
+        return False
 
-    # Comando PyInstaller
-    print("\n[2/4] Gerando executável com PyInstaller...")
+    # Comando PyInstaller usando o .spec
+    print("\n[2/3] Gerando executável com PyInstaller...")
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "--name=DocumentManager",
-        "--onefile",
-        "--windowed",
-        "--noconsole",
         "--clean",
-        "--add-data=src;src",
+        str(spec_file),
     ]
-
-    if icon_option:
-        cmd.append(icon_option)
-
-    # Hidden imports necessários
-    hidden_imports = [
-        "customtkinter",
-        "PIL",
-        "PIL._tkinter_finder",
-        "tkcalendar",
-        "babel.numbers",
-        "reportlab",
-        "reportlab.lib",
-        "reportlab.platypus",
-        "openpyxl",
-    ]
-
-    for imp in hidden_imports:
-        cmd.append(f"--hidden-import={imp}")
-
-    # Collect all para customtkinter
-    cmd.append("--collect-all=customtkinter")
-    cmd.append("--collect-all=tkcalendar")
-
-    # Arquivo principal
-    cmd.append("src/main.py")
 
     print(f"Executando: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=False)
@@ -84,16 +50,16 @@ def build_exe():
         print("\n[ERRO] Falha ao gerar executável!")
         return False
 
-    print("\n[3/4] Copiando arquivos adicionais...")
-
-    # Cria pasta assets no dist se necessário
+    # Copia o ícone para dist/assets
+    print("\n[3/3] Copiando arquivos adicionais...")
+    icon_path = Path("src/assets/LogoAmazonSmall.ico")
     dist_assets = Path("dist/assets")
     if icon_path.exists():
         dist_assets.mkdir(parents=True, exist_ok=True)
-        shutil.copy(icon_path, dist_assets / "icon.ico")
-        print("  - Copiado: icon.ico")
+        shutil.copy(icon_path, dist_assets / "LogoAmazonSmall.ico")
+        print("  - Copiado: LogoAmazonSmall.ico")
 
-    print("\n[4/4] Build concluído!")
+    print("\n[BUILD CONCLUÍDO!]")
     print("=" * 50)
     print(f"Executável gerado em: dist/DocumentManager.exe")
     print("=" * 50)

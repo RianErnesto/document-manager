@@ -138,7 +138,17 @@ class MainView(ctk.CTkFrame):
             validation_type="number",
             width=80,
         )
-        self._box_input.pack(side="left")
+        self._box_input.pack(side="left", padx=(0, 20))
+
+        self._classification_input = LockableInput(
+            row2,
+            label="Classificação",
+            placeholder="Nº",
+            required=True,
+            validation_type="number",
+            width=120,
+        )
+        self._classification_input.pack(side="left")
 
         # Dica sobre trava
         lock_hint = ctk.CTkLabel(
@@ -242,6 +252,8 @@ class MainView(ctk.CTkFrame):
             valid = False
         if not self._box_input.validate():
             valid = False
+        if not self._classification_input.validate():
+            valid = False
 
         if not valid:
             return
@@ -251,6 +263,7 @@ class MainView(ctk.CTkFrame):
         rack = int(self._rack_input.get())
         shelf = int(self._shelf_input.get())
         box = int(self._box_input.get())
+        classification = int(self._classification_input.get())
 
         # Verifica QR duplicado
         if self._repository.exists_qr_code(qr_code, exclude_id=self._editing_id):
@@ -266,6 +279,7 @@ class MainView(ctk.CTkFrame):
                 rack=rack,
                 shelf=shelf,
                 box=box,
+                classification=classification,
             )
             success, message = self._repository.update(document)
 
@@ -282,6 +296,7 @@ class MainView(ctk.CTkFrame):
                 rack=rack,
                 shelf=shelf,
                 box=box,
+                classification=classification,
             )
             success, message, new_id = self._repository.create(document)
 
@@ -307,10 +322,12 @@ class MainView(ctk.CTkFrame):
             self._rack_input.clear(force=False)
             self._shelf_input.clear(force=False)
             self._box_input.clear(force=False)
+            self._classification_input.clear(force=False)
         else:
             self._rack_input.clear(force=True)
             self._shelf_input.clear(force=True)
             self._box_input.clear(force=True)
+            self._classification_input.clear(force=True)
 
         self._qr_input.focus()
 
@@ -350,6 +367,7 @@ class MainView(ctk.CTkFrame):
         self._rack_input.set(str(row_data["rack"]))
         self._shelf_input.set(str(row_data["shelf"]))
         self._box_input.set(str(row_data["box"]))
+        self._classification_input.set(str(row_data.get("classification", "")))
 
         self._save_btn.configure(text="Atualizar")
         self._cancel_edit_btn.pack(side="right", padx=(0, 10))

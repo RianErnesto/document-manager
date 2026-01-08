@@ -16,7 +16,7 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 
 from ..models.document import Document
-from ..config import APP_NAME
+from ..config import COMPANY_NAME
 
 
 class ReportService:
@@ -63,7 +63,7 @@ class ReportService:
                 spaceAfter=20,
                 alignment=1,  # Center
             )
-            elements.append(Paragraph(f"{APP_NAME} - Relatório de Documentos", title_style))
+            elements.append(Paragraph(f"{COMPANY_NAME} - Relatório de Documentos", title_style))
 
             # Período
             period_text = ReportService._get_period_text(date_start, date_end)
@@ -85,7 +85,7 @@ class ReportService:
                 elements.append(Paragraph("Nenhum documento encontrado no período.", styles["Normal"]))
             else:
                 # Tabela
-                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Data Cadastro"]]
+                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data Cadastro"]]
 
                 for doc in documents:
                     data.append([
@@ -94,11 +94,12 @@ class ReportService:
                         str(doc.rack),
                         str(doc.shelf),
                         str(doc.box),
+                        doc.classification,
                         doc.created_at.strftime("%d/%m/%Y %H:%M") if doc.created_at else "",
                     ])
 
                 # Estilo da tabela
-                table = Table(data, colWidths=[50, 180, 70, 80, 70, 120])
+                table = Table(data, colWidths=[40, 150, 60, 70, 60, 90, 110])
                 table.setStyle(TableStyle([
                     # Header
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a73e8")),
@@ -186,18 +187,18 @@ class ReportService:
             alt_fill = PatternFill(start_color="f8f9fa", end_color="f8f9fa", fill_type="solid")
 
             # Título
-            ws.merge_cells("A1:F1")
-            ws["A1"] = f"{APP_NAME} - Relatório de Documentos"
+            ws.merge_cells("A1:G1")
+            ws["A1"] = f"{COMPANY_NAME} - Relatório de Documentos"
             ws["A1"].font = Font(bold=True, size=16)
             ws["A1"].alignment = Alignment(horizontal="center")
 
             # Período
-            ws.merge_cells("A2:F2")
+            ws.merge_cells("A2:G2")
             ws["A2"] = ReportService._get_period_text(date_start, date_end)
             ws["A2"].alignment = Alignment(horizontal="center")
 
             # Data de geração
-            ws.merge_cells("A3:F3")
+            ws.merge_cells("A3:G3")
             ws["A3"] = f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
             ws["A3"].alignment = Alignment(horizontal="center")
 
@@ -205,8 +206,8 @@ class ReportService:
             start_row = 5
 
             # Headers
-            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Data Cadastro"]
-            col_widths = [10, 30, 12, 14, 12, 20]
+            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data Cadastro"]
+            col_widths = [10, 30, 12, 14, 12, 18, 20]
 
             for col, (header, width) in enumerate(zip(headers, col_widths), 1):
                 cell = ws.cell(row=start_row, column=col, value=header)
@@ -224,6 +225,7 @@ class ReportService:
                     doc.rack,
                     doc.shelf,
                     doc.box,
+                    doc.classification,
                     doc.created_at.strftime("%d/%m/%Y %H:%M") if doc.created_at else "",
                 ]
 

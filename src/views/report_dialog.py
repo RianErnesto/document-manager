@@ -6,10 +6,12 @@ from tkinter import filedialog
 from datetime import datetime, date
 from typing import List, Optional
 import os
+import sys
 import subprocess
 import platform
+from pathlib import Path
 
-from ..config import COLORS, FONTS, DIMENSIONS, APP_NAME
+from ..config import COLORS, FONTS, DIMENSIONS
 from ..components.button import StyledButton
 from ..components.date_picker import DatePicker
 from ..components.message_box import show_message
@@ -38,6 +40,14 @@ class ReportDialog(ctk.CTkToplevel):
         # Modal
         self.transient(master)
         self.grab_set()
+
+        # Ícone
+        icon_path = self._get_icon_path()
+        if icon_path and os.path.exists(icon_path):
+            try:
+                self.after(200, lambda: self.iconbitmap(icon_path))
+            except Exception:
+                pass
 
         # Configuração de fundo
         self.configure(fg_color=COLORS["surface"])
@@ -233,3 +243,12 @@ class ReportDialog(ctk.CTkToplevel):
                 subprocess.run(["xdg-open", file_path])
         except Exception:
             pass  # Ignora erro ao abrir arquivo
+
+    def _get_icon_path(self) -> str:
+        """Retorna o caminho do ícone."""
+        if getattr(sys, 'frozen', False):
+            base_path = Path(sys.executable).parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")
+        else:
+            base_path = Path(__file__).parent.parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")

@@ -3,7 +3,8 @@ Configurações centralizadas da aplicação Document Manager.
 """
 
 # Informações da Aplicação
-APP_NAME = "Document Manager"
+APP_NAME = "Amazon Informática - Gerenciador de Documentos"
+COMPANY_NAME = "Amazon Informática"
 APP_VERSION = "1.0.0"
 WINDOW_WIDTH = 1100
 WINDOW_HEIGHT = 750
@@ -99,9 +100,10 @@ MESSAGES = {
 # Colunas da Tabela
 TABLE_COLUMNS = [
     {"key": "id", "label": "ID", "width": 60},
-    {"key": "qr_code", "label": "Código QR", "width": 200},
-    {"key": "rack", "label": "Estante", "width": 80},
-    {"key": "shelf", "label": "Prateleira", "width": 90},
-    {"key": "box", "label": "Caixa", "width": 80},
-    {"key": "created_at", "label": "Data Cadastro", "width": 150},
+    {"key": "qr_code", "label": "Código QR", "width": 180},
+    {"key": "rack", "label": "Estante", "width": 70},
+    {"key": "shelf", "label": "Prateleira", "width": 80},
+    {"key": "box", "label": "Caixa", "width": 70},
+    {"key": "classification", "label": "Classificação", "width": 120},
+    {"key": "created_at", "label": "Data Cadastro", "width": 140},
 ]

@@ -65,11 +65,11 @@ class App(ctk.CTk):
         if getattr(sys, 'frozen', False):
             # Executável PyInstaller
             base_path = Path(sys.executable).parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")
         else:
             # Desenvolvimento
-            base_path = Path(__file__).parent.parent
-
-        return str(base_path / "assets" / "icon.ico")
+            base_path = Path(__file__).parent
+            return str(base_path / "assets" / "LogoAmazonSmall.ico")
 
     def _create_main_view(self):
         """Cria a view principal."""

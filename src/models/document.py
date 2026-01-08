@@ -15,6 +15,7 @@ class Document:
     shelf: int = 0  # Prateleira
     box: int = 0  # Caixa
     rack: int = 0  # Estante
+    classification: int = 0  # Classificação
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -26,6 +27,7 @@ class Document:
             "shelf": self.shelf,
             "box": self.box,
             "rack": self.rack,
+            "classification": self.classification,
             "created_at": self.created_at.strftime("%d/%m/%Y %H:%M") if self.created_at else "",
             "updated_at": self.updated_at.strftime("%d/%m/%Y %H:%M") if self.updated_at else "",
         }
@@ -54,6 +56,7 @@ class Document:
             shelf=row["shelf"],
             box=row["box"],
             rack=row["rack"],
+            classification=row["classification"] if "classification" in row.keys() else 0,
             created_at=created_at,
             updated_at=updated_at,
         )

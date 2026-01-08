@@ -53,10 +53,17 @@ class DatabaseConnection:
                 shelf INTEGER NOT NULL,
                 box INTEGER NOT NULL,
                 rack INTEGER NOT NULL,
+                classification INTEGER NOT NULL DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Adicionar coluna classification se não existir (migração)
+        try:
+            cursor.execute("ALTER TABLE documents ADD COLUMN classification INTEGER NOT NULL DEFAULT 0")
+        except Exception:
+            pass  # Coluna já existe
 
         # Criar índices para melhorar performance
         cursor.execute("""
