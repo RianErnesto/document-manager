@@ -68,7 +68,6 @@ class StyledInput(ctk.CTkFrame):
         self._entry.pack(side="left", fill="x", expand=True)
 
         # Binds
-        self._entry.bind("<FocusOut>", self._on_focus_out)
         self._entry.bind("<KeyRelease>", self._on_key_release)
 
         # Label de erro (inicialmente oculto)

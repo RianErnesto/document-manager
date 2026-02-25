@@ -87,7 +87,6 @@ class LockableInput(ctk.CTkFrame):
             self._lock_button.pack(side="left", padx=(4, 0))
 
         # Binds
-        self._entry.bind("<FocusOut>", self._on_focus_out)
         self._entry.bind("<KeyRelease>", self._on_key_release)
 
         # Label de erro
