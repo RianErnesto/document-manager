@@ -38,6 +38,7 @@ class DataTable(ctk.CTkFrame):
         self._sort_column = "id"
         self._sort_direction = "DESC"
         self._selected_item = None
+        self._pending_click = None
 
         self._create_widgets()
 
@@ -115,8 +116,8 @@ class DataTable(ctk.CTkFrame):
         )
         style.map(
             "Custom.Treeview",
-            background=[("selected", COLORS["primary_light"])],
-            foreground=[("selected", COLORS["text"])],
+            background=[("selected", COLORS["primary"])],
+            foreground=[("selected", COLORS["text_light"])],
         )
 
         # Treeview
@@ -155,11 +156,20 @@ class DataTable(ctk.CTkFrame):
 
         # Binds
         self._tree.bind("<<TreeviewSelect>>", self._on_row_select)
+        self._tree.bind("<Button-1>", self._on_click)
         self._tree.bind("<Double-1>", self._on_row_double_click)
 
         # Rodapé com contagem
         footer_frame = ctk.CTkFrame(self, fg_color="transparent")
         footer_frame.pack(fill="x", padx=10, pady=(5, 10))
+
+        self._selection_label = ctk.CTkLabel(
+            footer_frame,
+            text="",
+            font=FONTS["body_bold"],
+            text_color=COLORS["primary"],
+        )
+        self._selection_label.pack(side="left")
 
         self._count_label = ctk.CTkLabel(
             footer_frame,
@@ -239,6 +249,25 @@ class DataTable(ctk.CTkFrame):
             text = f"Mostrando {filtered} de {total} documento(s)"
         self._count_label.configure(text=text)
 
+    def _on_click(self, event):
+        """Detecta clique em linha já selecionada para deselecionar."""
+        row_id = self._tree.identify_row(event.y)
+        if not row_id:
+            return
+
+        current_selection = self._tree.selection()
+        if current_selection and current_selection[0] == row_id:
+            # Clique na linha já selecionada — agenda deselect com delay
+            # para dar tempo de cancelar se for double-click
+            if self._pending_click:
+                self._tree.after_cancel(self._pending_click)
+            self._pending_click = self._tree.after(300, self._deselect_row)
+
+    def _deselect_row(self):
+        """Executa o deselect agendado."""
+        self._pending_click = None
+        self.clear_selection()
+
     def _on_row_select(self, event):
         """Callback ao selecionar uma linha."""
         selected = self._tree.selection()
@@ -252,12 +281,20 @@ class DataTable(ctk.CTkFrame):
                 row_data[col["key"]] = values[i] if i < len(values) else ""
 
             self._selected_item = row_data
+            self._selection_label.configure(
+                text=f"Documento selecionado:  ID {row_data.get('id', '')}"
+            )
 
             if self._on_select:
                 self._on_select(row_data)
 
     def _on_row_double_click(self, event):
         """Callback ao dar duplo clique."""
+        # Cancela deselect pendente — o double-click tem prioridade
+        if self._pending_click:
+            self._tree.after_cancel(self._pending_click)
+            self._pending_click = None
+
         if self._selected_item and self._on_double_click:
             self._on_double_click(self._selected_item)
 
@@ -278,6 +315,7 @@ class DataTable(ctk.CTkFrame):
         for item in self._tree.selection():
             self._tree.selection_remove(item)
         self._selected_item = None
+        self._selection_label.configure(text="")
 
     def refresh(self):
         """Atualiza a tabela."""
