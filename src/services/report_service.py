@@ -86,7 +86,7 @@ class ReportService:
                 elements.append(Paragraph("Nenhum documento encontrado no período.", styles["Normal"]))
             else:
                 # Tabela
-                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data Cadastro"]]
+                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data de Cadastro"]]
 
                 for doc in documents:
                     data.append([
@@ -208,7 +208,7 @@ class ReportService:
             start_row = 5
 
             # Headers
-            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data Cadastro"]
+            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data de Cadastro"]
             col_widths = [10, 30, 12, 14, 12, 18, 20]
 
             for col, (header, width) in enumerate(zip(headers, col_widths), 1):
