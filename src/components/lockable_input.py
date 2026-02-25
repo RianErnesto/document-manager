@@ -70,6 +70,50 @@ class LockableInput(ctk.CTkFrame):
         )
         self._entry.pack(side="left")
 
+        # Setas de incremento/decremento para campos numéricos
+        if self._validation_type == "number":
+            spinner_frame = ctk.CTkFrame(
+                self._input_container,
+                fg_color=COLORS["surface"],
+                border_color=COLORS["border"],
+                border_width=1,
+                corner_radius=4,
+                width=20,
+                height=DIMENSIONS["input_height"],
+            )
+            spinner_frame.pack(side="left", padx=(2, 0))
+            spinner_frame.pack_propagate(False)
+
+            btn_height = DIMENSIONS["input_height"] // 2
+
+            self._up_button = ctk.CTkButton(
+                spinner_frame,
+                text="\u25B2",
+                width=20,
+                height=btn_height,
+                font=("Segoe UI", 8),
+                fg_color="transparent",
+                hover_color=COLORS["primary_light"],
+                text_color=COLORS["text_secondary"],
+                corner_radius=2,
+                command=self._increment,
+            )
+            self._up_button.pack(fill="x")
+
+            self._down_button = ctk.CTkButton(
+                spinner_frame,
+                text="\u25BC",
+                width=20,
+                height=btn_height,
+                font=("Segoe UI", 8),
+                fg_color="transparent",
+                hover_color=COLORS["primary_light"],
+                text_color=COLORS["text_secondary"],
+                corner_radius=2,
+                command=self._decrement,
+            )
+            self._down_button.pack(fill="x")
+
         # Botão de trava
         if self._lockable:
             self._lock_button = ctk.CTkButton(
@@ -97,6 +141,21 @@ class LockableInput(ctk.CTkFrame):
             text_color=COLORS["danger"],
             anchor="w",
         )
+
+    def _increment(self):
+        """Incrementa o valor numérico."""
+        value = self._entry.get()
+        num = int(value) if value.isdigit() else 0
+        self._entry.delete(0, "end")
+        self._entry.insert(0, str(num + 1))
+
+    def _decrement(self):
+        """Decrementa o valor numérico (mínimo 1)."""
+        value = self._entry.get()
+        num = int(value) if value.isdigit() else 2
+        if num > 1:
+            self._entry.delete(0, "end")
+            self._entry.insert(0, str(num - 1))
 
     def _toggle_lock(self):
         """Alterna o estado de trava."""
