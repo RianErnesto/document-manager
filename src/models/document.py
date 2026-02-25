@@ -15,7 +15,7 @@ class Document:
     shelf: int = 0  # Prateleira
     box: int = 0  # Caixa
     rack: int = 0  # Estante
-    classification: int = 0  # Classificação
+    classification: str = ""  # Classificação
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -56,7 +56,7 @@ class Document:
             shelf=row["shelf"],
             box=row["box"],
             rack=row["rack"],
-            classification=row["classification"] if "classification" in row.keys() else 0,
+            classification=str(row["classification"]) if "classification" in row.keys() else "",
             created_at=created_at,
             updated_at=updated_at,
         )

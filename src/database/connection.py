@@ -21,7 +21,7 @@ class DatabaseConnection:
         if self._connection is None:
             self._db_path = self._get_db_path()
             self._connection = self._create_connection()
-            self._create_tables()
+            self._run_migrations()
 
     def _get_db_path(self) -> str:
         """Retorna o caminho do banco de dados."""
@@ -42,39 +42,12 @@ class DatabaseConnection:
         conn.row_factory = sqlite3.Row
         return conn
 
-    def _create_tables(self):
-        """Cria as tabelas necessárias."""
-        cursor = self._connection.cursor()
+    def _run_migrations(self):
+        """Executa as migrations pendentes do banco de dados."""
+        from .migrator import Migrator
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS documents (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                qr_code TEXT NOT NULL UNIQUE,
-                shelf INTEGER NOT NULL,
-                box INTEGER NOT NULL,
-                rack INTEGER NOT NULL,
-                classification INTEGER NOT NULL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        # Adicionar coluna classification se não existir (migração)
-        try:
-            cursor.execute("ALTER TABLE documents ADD COLUMN classification INTEGER NOT NULL DEFAULT 0")
-        except Exception:
-            pass  # Coluna já existe
-
-        # Criar índices para melhorar performance
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_qr_code ON documents(qr_code)
-        """)
-
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_created_at ON documents(created_at)
-        """)
-
-        self._connection.commit()
+        migrator = Migrator(self._connection)
+        migrator.run()
 
     def get_connection(self) -> sqlite3.Connection:
         """Retorna a conexão com o banco de dados."""

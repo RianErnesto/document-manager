@@ -143,9 +143,9 @@ class MainView(ctk.CTkFrame):
         self._classification_input = LockableInput(
             row2,
             label="Classificação",
-            placeholder="Nº",
+            placeholder="Ex: A1, Fiscal...",
             required=True,
-            validation_type="number",
+            validation_type="text",
             width=120,
         )
         self._classification_input.pack(side="left")
@@ -263,7 +263,7 @@ class MainView(ctk.CTkFrame):
         rack = int(self._rack_input.get())
         shelf = int(self._shelf_input.get())
         box = int(self._box_input.get())
-        classification = int(self._classification_input.get())
+        classification = self._classification_input.get().strip()
 
         # Verifica QR duplicado
         if self._repository.exists_qr_code(qr_code, exclude_id=self._editing_id):
