@@ -17,6 +17,7 @@ from openpyxl.utils import get_column_letter
 
 from ..models.document import Document
 from ..config import COMPANY_NAME
+from .audit_service import AuditLogger
 
 
 class ReportService:
@@ -145,6 +146,7 @@ class ReportService:
             return True, f"Relatório PDF gerado com sucesso!\n{file_path}"
 
         except Exception as e:
+            AuditLogger().error(f"Erro ao gerar relatório PDF: {e}")
             return False, f"Erro ao gerar PDF: {str(e)}"
 
     @staticmethod
@@ -248,6 +250,7 @@ class ReportService:
             return True, f"Relatório XLSX gerado com sucesso!\n{file_path}"
 
         except Exception as e:
+            AuditLogger().error(f"Erro ao gerar relatório XLSX: {e}")
             return False, f"Erro ao gerar XLSX: {str(e)}"
 
     @staticmethod

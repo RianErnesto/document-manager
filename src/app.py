@@ -15,6 +15,7 @@ from .config import (
     MIN_HEIGHT,
     COLORS,
 )
+from .services.audit_service import AuditLogger
 from .views.main_view import MainView
 
 
@@ -24,6 +25,9 @@ class App(ctk.CTk):
     def __init__(self):
         """Inicializa a aplicação."""
         super().__init__()
+
+        self._logger = AuditLogger()
+        self._logger.info(f"Sistema iniciado — versão {APP_VERSION}")
 
         self._configure_window()
         self._configure_appearance()
@@ -46,8 +50,8 @@ class App(ctk.CTk):
         if icon_path and os.path.exists(icon_path):
             try:
                 self.iconbitmap(icon_path)
-            except Exception:
-                pass
+            except Exception as e:
+                self._logger.warning(f"Erro ao carregar ícone: {e}")
 
         # Protocolo de fechamento
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
@@ -78,6 +82,7 @@ class App(ctk.CTk):
 
     def _on_closing(self):
         """Callback ao fechar a aplicação."""
+        self._logger.info("Sistema encerrado")
         self.destroy()
 
     def run(self):

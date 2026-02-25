@@ -17,6 +17,7 @@ from ..components.date_picker import DatePicker
 from ..components.message_box import show_message
 from ..models.document import Document
 from ..database.document_repository import DocumentRepository
+from ..services.audit_service import AuditLogger
 from ..services.report_service import ReportService
 
 
@@ -46,13 +47,14 @@ class ReportDialog(ctk.CTkToplevel):
         if icon_path and os.path.exists(icon_path):
             try:
                 self.after(200, lambda: self.iconbitmap(icon_path))
-            except Exception:
-                pass
+            except Exception as e:
+                self._logger.warning(f"Erro ao carregar ícone do dialog: {e}")
 
         # Configuração de fundo
         self.configure(fg_color=COLORS["surface"])
 
         self._repository = DocumentRepository()
+        self._logger = AuditLogger()
         self._create_widgets()
 
         self.focus()
@@ -225,6 +227,8 @@ class ReportDialog(ctk.CTkToplevel):
             )
 
         if success:
+            format_label = "PDF" if format_type == "pdf" else "Excel"
+            self._logger.info(f"Relatório {format_label} gerado — {file_path}")
             show_message(self, message, variant="success")
             # Abre o arquivo
             self._open_file(file_path)
@@ -241,8 +245,8 @@ class ReportDialog(ctk.CTkToplevel):
                 subprocess.run(["open", file_path])
             else:  # Linux
                 subprocess.run(["xdg-open", file_path])
-        except Exception:
-            pass  # Ignora erro ao abrir arquivo
+        except Exception as e:
+            self._logger.error(f"Erro ao abrir arquivo: {e}")
 
     def _get_icon_path(self) -> str:
         """Retorna o caminho do ícone."""

@@ -10,6 +10,8 @@ import re
 import sqlite3
 from pathlib import Path
 
+from ..services.audit_service import AuditLogger
+
 
 class Migrator:
     """Executa migrations pendentes no banco de dados."""
@@ -18,6 +20,7 @@ class Migrator:
 
     def __init__(self, connection: sqlite3.Connection):
         self._conn = connection
+        self._logger = AuditLogger()
         self._ensure_migrations_table()
 
     def _ensure_migrations_table(self):
@@ -76,6 +79,8 @@ class Migrator:
                     (version, name),
                 )
                 self._conn.commit()
-            except Exception:
+                self._logger.info(f"Migration aplicada: {version}_{name}")
+            except Exception as e:
                 self._conn.rollback()
+                self._logger.critical(f"Erro ao aplicar migration {version}_{name}: {e}")
                 raise

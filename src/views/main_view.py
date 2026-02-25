@@ -10,6 +10,7 @@ from ..components.input import StyledInput
 from ..components.lockable_input import LockableInput
 from ..components.table import DataTable
 from ..components.message_box import show_message, show_confirm
+from ..services.audit_service import AuditLogger
 from ..database.document_repository import DocumentRepository
 from ..models.document import Document
 from .report_dialog import ReportDialog
@@ -23,6 +24,7 @@ class MainView(ctk.CTkFrame):
         super().__init__(master, fg_color=COLORS["background"], **kwargs)
 
         self._repository = DocumentRepository()
+        self._logger = AuditLogger()
         self._editing_id: Optional[int] = None
 
         self._create_widgets()
@@ -284,6 +286,7 @@ class MainView(ctk.CTkFrame):
             success, message = self._repository.update(document)
 
             if success:
+                self._logger.info(f"Documento atualizado — ID: {self._editing_id}, QR: {qr_code}")
                 show_message(self.winfo_toplevel(), message, variant="success")
                 self._cancel_edit()
                 self._load_data()
@@ -301,6 +304,7 @@ class MainView(ctk.CTkFrame):
             success, message, new_id = self._repository.create(document)
 
             if success:
+                self._logger.info(f"Documento criado — ID: {new_id}, QR: {qr_code}")
                 show_message(self.winfo_toplevel(), message, variant="success")
                 self._clear_form(respect_locks=True)
                 self._load_data()
@@ -396,6 +400,7 @@ class MainView(ctk.CTkFrame):
             success, message = self._repository.delete(int(selected["id"]))
 
             if success:
+                self._logger.info(f"Documento excluído — ID: {selected['id']}, QR: {selected['qr_code']}")
                 show_message(self.winfo_toplevel(), message, variant="success")
                 self._load_data()
 

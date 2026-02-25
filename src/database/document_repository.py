@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 from ..models.document import Document
+from ..services.audit_service import AuditLogger
 from .connection import DatabaseConnection
 
 
@@ -14,6 +15,7 @@ class DocumentRepository:
     def __init__(self):
         self._db = DatabaseConnection()
         self._conn = self._db.get_connection()
+        self._logger = AuditLogger()
 
     def create(self, document: Document) -> Tuple[bool, str, Optional[int]]:
         """
@@ -40,6 +42,7 @@ class DocumentRepository:
             self._conn.commit()
             return True, "Documento cadastrado com sucesso!", cursor.lastrowid
         except Exception as e:
+            self._logger.error(f"Erro ao cadastrar documento (QR: {document.qr_code}): {e}")
             if "UNIQUE constraint failed" in str(e):
                 return False, "Código QR já cadastrado!", None
             return False, f"Erro ao cadastrar: {str(e)}", None
@@ -139,6 +142,7 @@ class DocumentRepository:
                 return False, "Documento não encontrado!"
             return True, "Documento atualizado com sucesso!"
         except Exception as e:
+            self._logger.error(f"Erro ao atualizar documento (ID: {document.id}): {e}")
             if "UNIQUE constraint failed" in str(e):
                 return False, "Código QR já existe em outro documento!"
             return False, f"Erro ao atualizar: {str(e)}"
@@ -157,6 +161,7 @@ class DocumentRepository:
                 return False, "Documento não encontrado!"
             return True, "Documento excluído com sucesso!"
         except Exception as e:
+            self._logger.error(f"Erro ao excluir documento (ID: {doc_id}): {e}")
             return False, f"Erro ao excluir: {str(e)}"
 
     def count(self) -> int:
