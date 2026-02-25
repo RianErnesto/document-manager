@@ -283,6 +283,8 @@ class LockableInput(ctk.CTkFrame):
         """
         if force or not self._is_locked:
             self._entry.delete(0, "end")
+            if hasattr(self._entry, "_activate_placeholder"):
+                self._entry._activate_placeholder()
             self._is_valid = True
             self._error_message = ""
             self._update_visual()

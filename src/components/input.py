@@ -151,6 +151,8 @@ class StyledInput(ctk.CTkFrame):
     def clear(self):
         """Limpa o campo."""
         self._entry.delete(0, "end")
+        if hasattr(self._entry, "_activate_placeholder"):
+            self._entry._activate_placeholder()
         self._is_valid = True
         self._error_message = ""
         self._update_visual()
