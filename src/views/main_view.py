@@ -106,7 +106,17 @@ class MainView(ctk.CTkFrame):
             required=True,
             width=400,
         )
-        self._qr_input.pack(side="left")
+        self._qr_input.pack(side="left", padx=(0, 20))
+
+        self._process_input = LockableInput(
+            row1,
+            label="Nº do Processo",
+            placeholder="0000/00000",
+            required=True,
+            validation_type="process",
+            width=140,
+        )
+        self._process_input.pack(side="left")
 
         # Linha 2: Estante, Prateleira, Caixa (com travas)
         row2 = ctk.CTkFrame(form_inner, fg_color="transparent")
@@ -256,6 +266,8 @@ class MainView(ctk.CTkFrame):
             valid = False
         if not self._classification_input.validate():
             valid = False
+        if not self._process_input.validate():
+            valid = False
 
         if not valid:
             return
@@ -266,6 +278,7 @@ class MainView(ctk.CTkFrame):
         shelf = int(self._shelf_input.get())
         box = int(self._box_input.get())
         classification = self._classification_input.get().strip()
+        process = self._process_input.get().strip()
 
         # Verifica QR duplicado
         if self._repository.exists_qr_code(qr_code, exclude_id=self._editing_id):
@@ -282,6 +295,7 @@ class MainView(ctk.CTkFrame):
                 shelf=shelf,
                 box=box,
                 classification=classification,
+                process=process,
             )
             success, message = self._repository.update(document)
 
@@ -300,6 +314,7 @@ class MainView(ctk.CTkFrame):
                 shelf=shelf,
                 box=box,
                 classification=classification,
+                process=process,
             )
             success, message, new_id = self._repository.create(document)
 
@@ -327,11 +342,13 @@ class MainView(ctk.CTkFrame):
             self._shelf_input.clear(force=False)
             self._box_input.clear(force=False)
             self._classification_input.clear(force=False)
+            self._process_input.clear(force=False)
         else:
             self._rack_input.clear(force=True)
             self._shelf_input.clear(force=True)
             self._box_input.clear(force=True)
             self._classification_input.clear(force=True)
+            self._process_input.clear(force=True)
 
         self._qr_input.focus()
 
@@ -372,6 +389,7 @@ class MainView(ctk.CTkFrame):
         self._shelf_input.set(str(row_data["shelf"]))
         self._box_input.set(str(row_data["box"]))
         self._classification_input.set(str(row_data.get("classification", "")))
+        self._process_input.set(str(row_data.get("process", "")))
 
         self._save_btn.configure(text="Atualizar")
         self._cancel_edit_btn.pack(side="right", padx=(0, 10))

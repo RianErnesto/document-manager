@@ -16,6 +16,7 @@ class Document:
     box: int = 0  # Caixa
     rack: int = 0  # Estante
     classification: str = ""  # Classificação
+    process: str = ""  # Número do processo (ex: 2025/01023)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -28,6 +29,7 @@ class Document:
             "box": self.box,
             "rack": self.rack,
             "classification": self.classification,
+            "process": self.process,
             "created_at": self.created_at.strftime("%d/%m/%Y %H:%M") if self.created_at else "",
             "updated_at": self.updated_at.strftime("%d/%m/%Y %H:%M") if self.updated_at else "",
         }
@@ -57,6 +59,7 @@ class Document:
             box=row["box"],
             rack=row["rack"],
             classification=str(row["classification"]) if "classification" in row.keys() else "",
+            process=str(row["process"]) if "process" in row.keys() else "",
             created_at=created_at,
             updated_at=updated_at,
         )

@@ -105,5 +105,6 @@ TABLE_COLUMNS = [
     {"key": "shelf", "label": "Prateleira", "width": 80},
     {"key": "box", "label": "Caixa", "width": 70},
     {"key": "classification", "label": "Classificação", "width": 120},
+    {"key": "process", "label": "Nº Processo", "width": 120},
     {"key": "created_at", "label": "Data de Cadastro", "width": 140},
 ]

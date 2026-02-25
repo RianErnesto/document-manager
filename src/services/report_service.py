@@ -86,7 +86,7 @@ class ReportService:
                 elements.append(Paragraph("Nenhum documento encontrado no período.", styles["Normal"]))
             else:
                 # Tabela
-                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data de Cadastro"]]
+                data = [["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Nº Processo", "Data de Cadastro"]]
 
                 for doc in documents:
                     data.append([
@@ -96,11 +96,12 @@ class ReportService:
                         str(doc.shelf),
                         str(doc.box),
                         doc.classification,
+                        doc.process,
                         doc.created_at.strftime("%d/%m/%Y %H:%M") if doc.created_at else "",
                     ])
 
                 # Estilo da tabela
-                table = Table(data, colWidths=[40, 150, 60, 70, 60, 90, 110])
+                table = Table(data, colWidths=[40, 130, 55, 65, 55, 80, 90, 100])
                 table.setStyle(TableStyle([
                     # Header
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a73e8")),
@@ -189,18 +190,18 @@ class ReportService:
             alt_fill = PatternFill(start_color="f8f9fa", end_color="f8f9fa", fill_type="solid")
 
             # Título
-            ws.merge_cells("A1:G1")
+            ws.merge_cells("A1:H1")
             ws["A1"] = f"{COMPANY_NAME} - Relatório de Documentos"
             ws["A1"].font = Font(bold=True, size=16)
             ws["A1"].alignment = Alignment(horizontal="center")
 
             # Período
-            ws.merge_cells("A2:G2")
+            ws.merge_cells("A2:H2")
             ws["A2"] = ReportService._get_period_text(date_start, date_end)
             ws["A2"].alignment = Alignment(horizontal="center")
 
             # Data de geração
-            ws.merge_cells("A3:G3")
+            ws.merge_cells("A3:H3")
             ws["A3"] = f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
             ws["A3"].alignment = Alignment(horizontal="center")
 
@@ -208,8 +209,8 @@ class ReportService:
             start_row = 5
 
             # Headers
-            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Data de Cadastro"]
-            col_widths = [10, 30, 12, 14, 12, 18, 20]
+            headers = ["ID", "Código QR", "Estante", "Prateleira", "Caixa", "Classificação", "Nº Processo", "Data de Cadastro"]
+            col_widths = [10, 30, 12, 14, 12, 18, 18, 20]
 
             for col, (header, width) in enumerate(zip(headers, col_widths), 1):
                 cell = ws.cell(row=start_row, column=col, value=header)
@@ -228,6 +229,7 @@ class ReportService:
                     doc.shelf,
                     doc.box,
                     doc.classification,
+                    doc.process,
                     doc.created_at.strftime("%d/%m/%Y %H:%M") if doc.created_at else "",
                 ]
 

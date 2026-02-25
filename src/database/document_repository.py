@@ -26,8 +26,8 @@ class DocumentRepository:
             cursor = self._conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO documents (qr_code, shelf, box, rack, classification, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO documents (qr_code, shelf, box, rack, classification, process, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     document.qr_code,
@@ -35,6 +35,7 @@ class DocumentRepository:
                     document.box,
                     document.rack,
                     document.classification,
+                    document.process,
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 ),
@@ -67,10 +68,11 @@ class DocumentRepository:
                 CAST(shelf AS TEXT) LIKE ? OR
                 CAST(box AS TEXT) LIKE ? OR
                 CAST(rack AS TEXT) LIKE ? OR
-                classification LIKE ?
+                classification LIKE ? OR
+                process LIKE ?
             )"""
             search_param = f"%{search}%"
-            params.extend([search_param] * 5)
+            params.extend([search_param] * 6)
 
         if date_start:
             query += " AND created_at >= ?"
@@ -81,7 +83,7 @@ class DocumentRepository:
             params.append(date_end.strftime("%Y-%m-%d 23:59:59"))
 
         # Validar coluna de ordenação
-        valid_columns = ["id", "qr_code", "shelf", "box", "rack", "classification", "created_at"]
+        valid_columns = ["id", "qr_code", "shelf", "box", "rack", "classification", "process", "created_at"]
         if order_by not in valid_columns:
             order_by = "id"
 
@@ -123,7 +125,7 @@ class DocumentRepository:
             cursor.execute(
                 """
                 UPDATE documents
-                SET qr_code = ?, shelf = ?, box = ?, rack = ?, classification = ?, updated_at = ?
+                SET qr_code = ?, shelf = ?, box = ?, rack = ?, classification = ?, process = ?, updated_at = ?
                 WHERE id = ?
                 """,
                 (
@@ -132,6 +134,7 @@ class DocumentRepository:
                     document.box,
                     document.rack,
                     document.classification,
+                    document.process,
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     document.id,
                 ),

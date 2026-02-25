@@ -197,6 +197,18 @@ class LockableInput(ctk.CTkFrame):
                 self._entry.insert(0, filtered)
                 return
 
+        # Máscara para campo de processo (0000/00000...)
+        elif self._validation_type == "process":
+            digits = "".join(c for c in value if c.isdigit())
+            if len(digits) > 4:
+                masked = digits[:4] + "/" + digits[4:]
+            else:
+                masked = digits
+            if masked != value:
+                self._entry.delete(0, "end")
+                self._entry.insert(0, masked)
+                return
+
         # Callback externo
         if self._on_change:
             self._on_change(value)
@@ -226,6 +238,13 @@ class LockableInput(ctk.CTkFrame):
             except ValueError:
                 self._is_valid = False
                 self._error_message = "Apenas números são permitidos"
+
+        # Validação de processo (mínimo 0000/0)
+        elif self._validation_type == "process" and value:
+            digits = "".join(c for c in value if c.isdigit())
+            if len(digits) < 5:
+                self._is_valid = False
+                self._error_message = "Formato mínimo: 0000/0"
 
         # Validação customizada
         elif self._validator and value:
