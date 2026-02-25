@@ -23,20 +23,6 @@ class LockableInput(ctk.CTkFrame):
         lockable: bool = True,
         **kwargs
     ):
-        """
-        Inicializa o input com trava.
-
-        Args:
-            master: Widget pai
-            label: Texto do label
-            placeholder: Texto placeholder
-            required: Se o campo é obrigatório
-            validation_type: Tipo de validação (text, number)
-            width: Largura do input
-            validator: Função de validação customizada
-            on_change: Callback quando o valor muda
-            lockable: Se permite travar o campo
-        """
         super().__init__(master, fg_color="transparent", **kwargs)
 
         self._label_text = label
@@ -48,10 +34,6 @@ class LockableInput(ctk.CTkFrame):
         self._is_locked = False
         self._is_valid = True
         self._error_message = ""
-
-        # Variável para o valor
-        self._var = ctk.StringVar()
-        self._var.trace_add("write", self._on_value_change)
 
         self._create_widgets(label, placeholder, width)
 
@@ -73,11 +55,10 @@ class LockableInput(ctk.CTkFrame):
         self._input_container = ctk.CTkFrame(self, fg_color="transparent")
         self._input_container.pack(fill="x")
 
-        # Entry
+        # Entry sem textvariable para placeholder funcionar
         self._entry = ctk.CTkEntry(
             self._input_container,
             placeholder_text=placeholder,
-            textvariable=self._var,
             width=width,
             height=DIMENSIONS["input_height"],
             font=FONTS["input"],
@@ -93,7 +74,7 @@ class LockableInput(ctk.CTkFrame):
         if self._lockable:
             self._lock_button = ctk.CTkButton(
                 self._input_container,
-                text="🔓",
+                text="\U0001f513",
                 width=36,
                 height=DIMENSIONS["input_height"],
                 font=("Segoe UI", 14),
@@ -105,8 +86,9 @@ class LockableInput(ctk.CTkFrame):
             )
             self._lock_button.pack(side="left", padx=(4, 0))
 
-        # Bind para validação no blur
+        # Binds
         self._entry.bind("<FocusOut>", self._on_focus_out)
+        self._entry.bind("<KeyRelease>", self._on_key_release)
 
         # Label de erro
         self._error_label = ctk.CTkLabel(
@@ -126,7 +108,7 @@ class LockableInput(ctk.CTkFrame):
         """Atualiza o visual baseado no estado de trava."""
         if self._is_locked:
             self._lock_button.configure(
-                text="🔒",
+                text="\U0001f512",
                 fg_color=COLORS["locked"],
                 text_color=COLORS["locked_border"],
             )
@@ -136,7 +118,7 @@ class LockableInput(ctk.CTkFrame):
             )
         else:
             self._lock_button.configure(
-                text="🔓",
+                text="\U0001f513",
                 fg_color="transparent",
                 text_color=COLORS["text_secondary"],
             )
@@ -145,15 +127,16 @@ class LockableInput(ctk.CTkFrame):
                 border_color=COLORS["border"] if self._is_valid else COLORS["danger"],
             )
 
-    def _on_value_change(self, *args):
+    def _on_key_release(self, event=None):
         """Callback quando o valor muda."""
-        value = self._var.get()
+        value = self._entry.get()
 
         # Filtra caracteres para campos numéricos
         if self._validation_type == "number":
             filtered = "".join(c for c in value if c.isdigit())
             if filtered != value:
-                self._var.set(filtered)
+                self._entry.delete(0, "end")
+                self._entry.insert(0, filtered)
                 return
 
         # Callback externo
@@ -166,7 +149,7 @@ class LockableInput(ctk.CTkFrame):
 
     def validate(self) -> bool:
         """Valida o valor do campo."""
-        value = self._var.get()
+        value = self._entry.get()
         self._is_valid = True
         self._error_message = ""
 
@@ -207,11 +190,12 @@ class LockableInput(ctk.CTkFrame):
 
     def get(self) -> str:
         """Retorna o valor do campo."""
-        return self._var.get()
+        return self._entry.get()
 
     def set(self, value: str):
         """Define o valor do campo."""
-        self._var.set(value)
+        self._entry.delete(0, "end")
+        self._entry.insert(0, value)
 
     def clear(self, force: bool = False):
         """
@@ -221,7 +205,7 @@ class LockableInput(ctk.CTkFrame):
             force: Se True, limpa mesmo se estiver travado
         """
         if force or not self._is_locked:
-            self._var.set("")
+            self._entry.delete(0, "end")
             self._is_valid = True
             self._error_message = ""
             self._update_visual()

@@ -22,19 +22,6 @@ class StyledInput(ctk.CTkFrame):
         on_change: Optional[Callable[[str], None]] = None,
         **kwargs
     ):
-        """
-        Inicializa o input estilizado.
-
-        Args:
-            master: Widget pai
-            label: Texto do label
-            placeholder: Texto placeholder
-            required: Se o campo é obrigatório
-            validation_type: Tipo de validação (text, number)
-            width: Largura do input
-            validator: Função de validação customizada
-            on_change: Callback quando o valor muda
-        """
         super().__init__(master, fg_color="transparent", **kwargs)
 
         self._label_text = label
@@ -44,10 +31,6 @@ class StyledInput(ctk.CTkFrame):
         self._on_change = on_change
         self._is_valid = True
         self._error_message = ""
-
-        # Variável para o valor
-        self._var = ctk.StringVar()
-        self._var.trace_add("write", self._on_value_change)
 
         self._create_widgets(label, placeholder, width)
 
@@ -69,11 +52,10 @@ class StyledInput(ctk.CTkFrame):
         self._input_frame = ctk.CTkFrame(self, fg_color="transparent")
         self._input_frame.pack(fill="x")
 
-        # Entry
+        # Entry sem textvariable para placeholder funcionar
         self._entry = ctk.CTkEntry(
             self._input_frame,
             placeholder_text=placeholder,
-            textvariable=self._var,
             width=width,
             height=DIMENSIONS["input_height"],
             font=FONTS["input"],
@@ -85,8 +67,9 @@ class StyledInput(ctk.CTkFrame):
         )
         self._entry.pack(side="left", fill="x", expand=True)
 
-        # Bind para validação no blur
+        # Binds
         self._entry.bind("<FocusOut>", self._on_focus_out)
+        self._entry.bind("<KeyRelease>", self._on_key_release)
 
         # Label de erro (inicialmente oculto)
         self._error_label = ctk.CTkLabel(
@@ -97,15 +80,16 @@ class StyledInput(ctk.CTkFrame):
             anchor="w",
         )
 
-    def _on_value_change(self, *args):
+    def _on_key_release(self, event=None):
         """Callback quando o valor muda."""
-        value = self._var.get()
+        value = self._entry.get()
 
         # Filtra caracteres para campos numéricos
         if self._validation_type == "number":
             filtered = "".join(c for c in value if c.isdigit())
             if filtered != value:
-                self._var.set(filtered)
+                self._entry.delete(0, "end")
+                self._entry.insert(0, filtered)
                 return
 
         # Callback externo
@@ -118,7 +102,7 @@ class StyledInput(ctk.CTkFrame):
 
     def validate(self) -> bool:
         """Valida o valor do campo."""
-        value = self._var.get()
+        value = self._entry.get()
         self._is_valid = True
         self._error_message = ""
 
@@ -158,15 +142,16 @@ class StyledInput(ctk.CTkFrame):
 
     def get(self) -> str:
         """Retorna o valor do campo."""
-        return self._var.get()
+        return self._entry.get()
 
     def set(self, value: str):
         """Define o valor do campo."""
-        self._var.set(value)
+        self._entry.delete(0, "end")
+        self._entry.insert(0, value)
 
     def clear(self):
         """Limpa o campo."""
-        self._var.set("")
+        self._entry.delete(0, "end")
         self._is_valid = True
         self._error_message = ""
         self._update_visual()

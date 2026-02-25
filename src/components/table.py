@@ -64,25 +64,25 @@ class DataTable(ctk.CTkFrame):
         search_label = ctk.CTkLabel(
             search_frame,
             text="Buscar:",
-            font=FONTS["body"],
-            text_color=COLORS["text_secondary"],
+            font=FONTS["body_bold"],
+            text_color=COLORS["text"],
         )
-        search_label.pack(side="left", padx=(0, 5))
-
-        self._search_var = ctk.StringVar()
-        self._search_var.trace_add("write", self._on_search)
+        search_label.pack(side="left", padx=(0, 8))
 
         self._search_entry = ctk.CTkEntry(
             search_frame,
-            textvariable=self._search_var,
-            width=200,
-            height=32,
+            width=280,
+            height=36,
             font=FONTS["body"],
             fg_color=COLORS["surface"],
-            border_color=COLORS["border"],
-            placeholder_text="Digite para buscar...",
+            border_color=COLORS["primary"],
+            border_width=2,
+            corner_radius=DIMENSIONS["border_radius"],
+            placeholder_text="Código QR, estante, caixa...",
+            placeholder_text_color=COLORS["text_secondary"],
         )
         self._search_entry.pack(side="left")
+        self._search_entry.bind("<KeyRelease>", self._on_search)
 
         # Frame da tabela
         table_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -181,7 +181,7 @@ class DataTable(ctk.CTkFrame):
 
     def _on_search(self, *args):
         """Filtra os dados baseado na busca."""
-        search_text = self._search_var.get().lower()
+        search_text = self._search_entry.get().lower()
 
         if not search_text:
             self._filtered_data = self._data.copy()
