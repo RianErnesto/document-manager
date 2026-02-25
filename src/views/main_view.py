@@ -186,10 +186,10 @@ class MainView(ctk.CTkFrame):
 
         self._clear_btn = StyledButton(
             button_row,
-            text="Limpar",
+            text="Limpar Campos",
             variant="secondary",
             command=self._clear_form,
-            width=100,
+            width=120,
         )
         self._clear_btn.pack(side="right")
 
@@ -218,31 +218,30 @@ class MainView(ctk.CTkFrame):
             table_card,
             columns=TABLE_COLUMNS,
             on_select=self._on_row_select,
+            on_deselect=self._on_row_deselect,
             on_double_click=self._on_row_double_click,
         )
         self._table.pack(fill="both", expand=True)
 
-        # Botões de ação
-        action_frame = ctk.CTkFrame(table_card, fg_color="transparent")
-        action_frame.pack(fill="x", padx=10, pady=10)
-
+        # Botões de ação no cabeçalho da tabela
         self._edit_btn = StyledButton(
-            action_frame,
+            self._table.action_frame,
             text="Editar",
             variant="primary",
             command=self._edit_selected,
-            width=100,
+            width=80,
         )
-        self._edit_btn.pack(side="left", padx=(0, 10))
+        # Inicialmente ocultos
+        self._edit_btn.pack_forget()
 
         self._delete_btn = StyledButton(
-            action_frame,
+            self._table.action_frame,
             text="Excluir",
             variant="danger",
             command=self._delete_selected,
-            width=100,
+            width=80,
         )
-        self._delete_btn.pack(side="left")
+        self._delete_btn.pack_forget()
 
     def _load_data(self):
         """Carrega os dados na tabela."""
@@ -362,7 +361,15 @@ class MainView(ctk.CTkFrame):
 
     def _on_row_select(self, row_data: dict):
         """Callback ao selecionar uma linha."""
-        pass  # Não faz nada ao selecionar
+        self._table.action_frame.pack(side="left", padx=(15, 0))
+        self._edit_btn.pack(side="left", padx=(0, 8))
+        self._delete_btn.pack(side="left")
+
+    def _on_row_deselect(self):
+        """Callback ao deselecionar."""
+        self._edit_btn.pack_forget()
+        self._delete_btn.pack_forget()
+        self._table.action_frame.pack_forget()
 
     def _on_row_double_click(self, row_data: dict):
         """Callback ao dar duplo clique."""

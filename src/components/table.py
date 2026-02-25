@@ -16,6 +16,7 @@ class DataTable(ctk.CTkFrame):
         master,
         columns: List[Dict[str, Any]],
         on_select: Optional[Callable[[Dict], None]] = None,
+        on_deselect: Optional[Callable[[], None]] = None,
         on_double_click: Optional[Callable[[Dict], None]] = None,
         **kwargs
     ):
@@ -32,6 +33,7 @@ class DataTable(ctk.CTkFrame):
 
         self._columns = columns
         self._on_select = on_select
+        self._on_deselect = on_deselect
         self._on_double_click = on_double_click
         self._data: List[Dict] = []
         self._filtered_data: List[Dict] = []
@@ -56,6 +58,9 @@ class DataTable(ctk.CTkFrame):
             text_color=COLORS["text"],
         )
         title_label.pack(side="left")
+
+        # Frame para botões de ação (exposto para uso externo, oculto inicialmente)
+        self.action_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
 
         # Campo de busca
         search_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
@@ -316,6 +321,8 @@ class DataTable(ctk.CTkFrame):
             self._tree.selection_remove(item)
         self._selected_item = None
         self._selection_label.configure(text="")
+        if self._on_deselect:
+            self._on_deselect()
 
     def refresh(self):
         """Atualiza a tabela."""
