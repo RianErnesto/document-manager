@@ -73,11 +73,33 @@ class DatabaseConnection:
         self._connection.execute("PRAGMA synchronous = FULL")
 
     def _run_migrations(self) -> None:
-        """Executa as migrations pendentes do banco de dados."""
+        """Executa as migrations pendentes do banco de dados.
+
+        Traduz erros típicos de share mal-configurado (read-only, lock
+        irrecuperável) em DatabaseConnectionError pra UI mostrar modal
+        amigável em vez de stack trace.
+        """
         from .migrator import Migrator
 
-        migrator = Migrator(self._connection)
-        migrator.run()
+        try:
+            migrator = Migrator(self._connection)
+            migrator.run()
+        except sqlite3.OperationalError as e:
+            msg = str(e).lower()
+            if "readonly" in msg or "read-only" in msg or "readonly database" in msg:
+                raise DatabaseConnectionError(
+                    "Banco em modo somente-leitura. Verifique se o usuário "
+                    "configurado no .env tem permissão de escrita no "
+                    f"compartilhamento {self._db_config.unc_share}."
+                ) from e
+            if "locked" in msg:
+                raise DatabaseConnectionError(
+                    "Banco está bloqueado por outro processo durante "
+                    "migrations. Tente novamente em alguns segundos."
+                ) from e
+            raise DatabaseConnectionError(
+                f"Erro ao aplicar migrations: {e}"
+            ) from e
 
     def get_connection(self) -> sqlite3.Connection:
         """Retorna a conexão com o banco de dados."""

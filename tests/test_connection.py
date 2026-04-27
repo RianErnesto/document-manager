@@ -127,3 +127,52 @@ def test_locked_error_wraps_error(tmp_path, monkeypatch):
 
     with pytest.raises(DatabaseConnectionError, match="bloqueado"):
         DatabaseConnection(cfg)
+
+
+def test_readonly_share_during_migrations_wraps_error(tmp_path, monkeypatch):
+    """Migrations contra banco read-only → DatabaseConnectionError amigável.
+
+    Cenário de produção: o share SMB foi montado com user que tem permissão de
+    leitura mas não de escrita. A conexão abre (sqlite3 aceita read-only), mas
+    o BEGIN IMMEDIATE da migration falha com 'attempt to write a readonly database'.
+    """
+    cfg = _make_config(tmp_path)
+    local_db = tmp_path / "actual.db"
+    real_connect = sqlite3.connect
+    monkeypatch.setattr(
+        "src.database.connection.sqlite3.connect",
+        lambda unc_path, **kw: real_connect(str(local_db), **kw),
+    )
+
+    # Monkeypatch o Migrator.run pra simular o erro de read-only que acontece
+    # no BEGIN IMMEDIATE quando o share está sem permissão de escrita.
+    from src.database.migrator import Migrator
+
+    def raising_run(self):
+        raise sqlite3.OperationalError("attempt to write a readonly database")
+
+    monkeypatch.setattr(Migrator, "run", raising_run)
+
+    with pytest.raises(DatabaseConnectionError, match="somente-leitura"):
+        DatabaseConnection(cfg)
+
+
+def test_locked_error_during_migrations_wraps_error(tmp_path, monkeypatch):
+    """Lock irrecuperável durante migration → DatabaseConnectionError amigável."""
+    cfg = _make_config(tmp_path)
+    local_db = tmp_path / "actual.db"
+    real_connect = sqlite3.connect
+    monkeypatch.setattr(
+        "src.database.connection.sqlite3.connect",
+        lambda unc_path, **kw: real_connect(str(local_db), **kw),
+    )
+
+    from src.database.migrator import Migrator
+
+    def raising_run(self):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(Migrator, "run", raising_run)
+
+    with pytest.raises(DatabaseConnectionError, match="bloqueado"):
+        DatabaseConnection(cfg)
