@@ -4,3 +4,8 @@ reportlab>=4.0.0
 openpyxl>=3.1.0
 tkcalendar>=1.6.1
 pyinstaller>=6.0.0
+python-dotenv>=1.0.0
+
+# Dev
+pytest>=8.0.0
+pytest-mock>=3.12.0

@@ -5,7 +5,7 @@ Configurações centralizadas da aplicação Document Manager.
 # Informações da Aplicação
 APP_NAME = "Amazon Informática - Gerenciador de Documentos"
 COMPANY_NAME = "Amazon Informática"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.2.0"
 WINDOW_WIDTH = 1100
 WINDOW_HEIGHT = 750
 MIN_WIDTH = 900

@@ -42,3 +42,6 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+
+# Internal design docs (not for public repo)
+docs/
