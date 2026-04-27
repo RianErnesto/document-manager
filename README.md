@@ -121,6 +121,44 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Configuracao com .env
+
+A partir da v1.2.0, o app conecta a um banco SQLite hospedado num servidor de rede SMB. As credenciais e caminhos sao lidos de um arquivo `.env` na mesma pasta do executavel (ou na raiz do projeto, em modo desenvolvimento).
+
+### 1. Criar o `.env`
+
+Copie `.env.example` para `.env` e preencha com os valores reais:
+
+```bash
+copy .env.example .env
+```
+
+Edite `.env`:
+
+```
+DB_SERVER=192.168.3.180
+DB_SHARE=BKP-Semas
+DB_FILENAME=documents.db
+DB_USER=admin
+DB_PASSWORD=<senha real>
+
+BACKUP_DIR=C:\CPD\Backups
+BACKUP_INTERVAL_HOURS=24
+BACKUP_RETENTION_DAYS=30
+```
+
+### 2. Pre-requisitos do servidor
+
+A maquina `192.168.3.180` deve:
+
+- Ter `D:\BKP-Semas` compartilhado com nome `BKP-Semas`
+- Ter usuario `admin` com permissao de **leitura, escrita e criacao** em `D:\BKP-Semas`
+- Ter SMBv2+ habilitado (default no Windows moderno)
+
+### 3. O `.env` nunca e commitado
+
+`.env` esta no `.gitignore`. Apenas `.env.example` (template sem segredos) faz parte do repositorio.
+
 ## Execucao
 
 ### Modo Desenvolvimento
@@ -343,7 +381,21 @@ CREATE TABLE schema_migrations (
 );
 ```
 
-O arquivo `documents.db` e criado automaticamente na pasta do executavel. As migrations pendentes sao aplicadas automaticamente ao iniciar o sistema.
+A partir da v1.2.0, o `documents.db` reside em `\\192.168.3.180\BKP-Semas\` (servidor de arquivos do CPD). Cada estacao cliente conecta via UNC path autenticando com as credenciais do `.env` no startup. Se o arquivo nao existir no servidor, o app cria automaticamente — desde que o usuario configurado tenha permissao de criacao. Migrations sao protegidas por lock exclusivo (`BEGIN IMMEDIATE`): clientes simultaneos esperam o lock e nao corrompem o schema. Operacoes normais de INSERT/UPDATE tambem serializam pelo `busy_timeout` configurado (30s), suficiente pro volume baixo de cadastros do CPD.
+
+## Deploy em multiplas estacoes (v1.2.0+)
+
+1. **Pre-requisito do servidor (`192.168.3.180`):** pasta `D:\BKP-Semas` compartilhada como `BKP-Semas`, usuario `admin` com permissao de leitura/escrita/criacao.
+
+2. **Migracao inicial dos dados** (uma unica vez): para preservar os dados existentes, copie o `documents.db` da estacao com a base mais completa para `\\192.168.3.180\BKP-Semas\documents.db`. Para comecar do zero, pule este passo — o app cria um banco vazio na primeira execucao.
+
+3. **Em cada estacao cliente:**
+   - Substitua o `DocumentManager.exe` pelo build da v1.2.0.
+   - Crie o `.env` ao lado do `.exe`, copiando de `.env.example` e preenchendo `DB_PASSWORD`.
+   - Confira que o usuario logado consegue criar `C:\CPD\Backups\` (mesmo padrao de `C:\CPD\Logs\`).
+   - Primeira abertura: o app vai conectar, rodar migrations pendentes e gerar o backup inicial em `C:\CPD\Backups\` (proximos backups respeitam `BACKUP_INTERVAL_HOURS`).
+
+4. **Rollback:** se algo der muito errado nos primeiros dias, voltar para `DocumentManager.exe` v1.1.0 em cada estacao. Os dados acumulados na v1.2.0 ficam no servidor, mas cada estacao volta a usar seu `documents.db` local antigo (defasado desde antes do upgrade). **Antes** do rollback, exporte os dados do servidor (`\\192.168.3.180\BKP-Semas\documents.db`) e reimporte numa unica estacao escolhida como fonte canonica — senao cada estacao fica com versoes diferentes e divergentes da base. **Valide o checklist manual antes de fazer rollout amplo** pra evitar precisar deste caminho.
 
 ## Tecnologias Utilizadas
 
