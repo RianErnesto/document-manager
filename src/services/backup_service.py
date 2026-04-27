@@ -19,7 +19,14 @@ from ..database.db_config import DBConfig
 @dataclass(frozen=True)
 class BackupResult:
     """Resultado de uma tentativa de backup."""
-    status: str  # CREATED | SKIPPED_RECENT | FAILED
+
+    # Constantes pros valores válidos de `status` — consumidores comparam
+    # contra estas em vez de strings literais, evitando typo-bugs silenciosos.
+    STATUS_CREATED = "CREATED"
+    STATUS_SKIPPED_RECENT = "SKIPPED_RECENT"
+    STATUS_FAILED = "FAILED"
+
+    status: str  # uma das três STATUS_* acima
     message: Optional[str] = None
     path: Optional[str] = None
 
@@ -52,7 +59,7 @@ class BackupService:
             backup_dir = Path(self._config.backup_dir)
             os.makedirs(backup_dir, exist_ok=True)
         except OSError as e:
-            return BackupResult(status="FAILED", message=_safe_error(e))
+            return BackupResult(status=BackupResult.STATUS_FAILED, message=_safe_error(e))
 
         # Inner try: depois que o diretório existe, qualquer falha é recuperável
         # numa próxima execução; queremos cleanup mesmo no caminho SKIPPED.
@@ -60,19 +67,19 @@ class BackupService:
             if self._has_recent_backup(backup_dir):
                 self._cleanup_old(backup_dir)
                 return BackupResult(
-                    status="SKIPPED_RECENT",
+                    status=BackupResult.STATUS_SKIPPED_RECENT,
                     message=f"Último backup há menos de {self._config.backup_interval_hours}h",
                 )
 
             backup_path = self._do_backup(backup_dir)
             self._cleanup_old(backup_dir)
             return BackupResult(
-                status="CREATED",
+                status=BackupResult.STATUS_CREATED,
                 message=f"Backup criado em {backup_path.name}",
                 path=str(backup_path),
             )
         except Exception as e:
-            return BackupResult(status="FAILED", message=_safe_error(e))
+            return BackupResult(status=BackupResult.STATUS_FAILED, message=_safe_error(e))
 
     def _basename(self) -> str:
         """Prefixo do backup, derivado de DB_FILENAME sem a extensão."""
