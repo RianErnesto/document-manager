@@ -5,7 +5,6 @@ Escaneia arquivos NNN_descricao.py em src/database/migrations/,
 compara com o que já foi aplicado (tabela schema_migrations)
 e executa os pendentes em ordem.
 """
-import importlib
 import re
 import sqlite3
 from pathlib import Path
@@ -58,29 +57,54 @@ class Migrator:
         return migrations
 
     def run(self):
-        """Executa todas as migrations pendentes em ordem."""
-        applied = self._get_applied_versions()
-        migrations = self._discover_migrations()
+        """Executa todas as migrations pendentes em ordem (concorrência-safe).
 
-        for version, name, path in migrations:
-            if version in applied:
-                continue
+        Adquire lock exclusivo de escrita via BEGIN IMMEDIATE. Espera até
+        busy_timeout (configurado na connection) caso outro processo tenha lock.
+        Após adquirir, RELÊ schema_migrations — outro processo pode ter
+        aplicado entre o nosso `_ensure_migrations_table` e a entrada no lock.
+        """
+        try:
+            self._conn.execute("BEGIN IMMEDIATE")
+            applied = self._get_applied_versions()
+            migrations = self._discover_migrations()
 
-            module_name = f"src.database.migrations.{path.stem}"
-            spec = importlib.util.spec_from_file_location(module_name, path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            cursor = self._conn.cursor()
-            try:
-                module.up(cursor)
-                cursor.execute(
-                    "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
-                    (version, name),
+            pending = [(v, n, p) for v, n, p in migrations if v not in applied]
+            if not pending:
+                self._logger.info(
+                    f"Nenhuma migration pendente (aplicadas: {len(applied)})"
                 )
                 self._conn.commit()
-                self._logger.info(f"Migration aplicada: {version}_{name}")
-            except Exception as e:
+                return
+
+            for version, name, path in pending:
+                self._apply_migration(version, name, path)
+
+            self._conn.commit()
+        except Exception as e:
+            try:
                 self._conn.rollback()
-                self._logger.critical(f"Erro ao aplicar migration {version}_{name}: {e}")
-                raise
+            except sqlite3.Error:
+                pass  # rollback é no-op se BEGIN nunca completou
+            self._logger.critical(f"Erro durante migration sweep: {e}")
+            raise
+
+    def _apply_migration(self, version: str, name: str, path):
+        """Carrega o módulo e executa up() + INSERT em schema_migrations.
+
+        Não comita — quem chama é responsável pelo commit/rollback do sweep todo.
+        """
+        import importlib.util
+
+        module_name = f"src.database.migrations.{path.stem}"
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        cursor = self._conn.cursor()
+        module.up(cursor)
+        cursor.execute(
+            "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
+            (version, name),
+        )
+        self._logger.info(f"Migration aplicada: {version}_{name}")
