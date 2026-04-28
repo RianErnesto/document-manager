@@ -45,19 +45,36 @@ class App(ctk.CTk):
         self._authenticator: Optional[NetworkShareAuthenticator] = None
         self._db: Optional[DatabaseConnection] = None
         self._main_view: Optional[MainView] = None
+        self._initialized_ok = False
 
-        # Configura janela primeiro pra que o modal de erro tenha um pai visível.
-        self._configure_window()
+        # Configura a aparência sempre. A janela é configurada só se o backend
+        # subir; durante a inicialização ela fica withdraw'd pra evitar:
+        # 1) flash de janela vazia antes do modal de erro
+        # 2) erros "wm command: application has been destroyed" ao destruir
+        #    a root sem nunca ter rodado mainloop.
         self._configure_appearance()
+        self._configure_window()
+        self.withdraw()
 
         if not self._initialize_backend():
-            # Erro fatal já mostrado; agenda destroy pra próxima volta do
-            # event loop. Tk não permite destroy() durante __init__ antes
-            # de mainloop() rodar.
-            self.after_idle(self.destroy)
+            # Backend falhou; remove handlers que poderiam disparar pós-destroy
+            # e destrói a janela imediatamente. main.py checa initialized_ok()
+            # antes de chamar mainloop, então não entramos no loop aqui.
+            self.protocol("WM_DELETE_WINDOW", lambda: None)
+            try:
+                self.destroy()
+            except Exception:
+                pass
             return
 
+        # Backend OK: revela a janela e cria a view principal.
+        self.deiconify()
         self._create_main_view()
+        self._initialized_ok = True
+
+    def initialized_ok(self) -> bool:
+        """True se o backend subiu e a UI principal foi criada."""
+        return self._initialized_ok
 
     # ----- Backend bootstrap -----
 

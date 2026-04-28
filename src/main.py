@@ -18,6 +18,10 @@ from src.app import App
 def main():
     """Função principal."""
     app = App()
+    if not app.initialized_ok():
+        # Backend de banco falhou no startup; o modal de erro já foi mostrado
+        # e a janela já foi destruída. Saída limpa sem entrar no mainloop.
+        return
     app.run()
 
 
