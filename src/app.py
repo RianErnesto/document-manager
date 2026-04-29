@@ -47,19 +47,13 @@ class App(ctk.CTk):
         self._main_view: Optional[MainView] = None
         self._initialized_ok = False
 
-        # Configura a aparência sempre. A janela é configurada só se o backend
-        # subir; durante a inicialização ela fica withdraw'd pra evitar:
-        # 1) flash de janela vazia antes do modal de erro
-        # 2) erros "wm command: application has been destroyed" ao destruir
-        #    a root sem nunca ter rodado mainloop.
-        self._configure_appearance()
+        # Configura janela e aparência sempre. Se o backend falhar, removemos
+        # o handler do WM_DELETE_WINDOW antes de destruir a root pra evitar
+        # erros "wm command: application has been destroyed" durante teardown.
         self._configure_window()
-        self.withdraw()
+        self._configure_appearance()
 
         if not self._initialize_backend():
-            # Backend falhou; remove handlers que poderiam disparar pós-destroy
-            # e destrói a janela imediatamente. main.py checa initialized_ok()
-            # antes de chamar mainloop, então não entramos no loop aqui.
             self.protocol("WM_DELETE_WINDOW", lambda: None)
             try:
                 self.destroy()
@@ -67,8 +61,6 @@ class App(ctk.CTk):
                 pass
             return
 
-        # Backend OK: revela a janela e cria a view principal.
-        self.deiconify()
         self._create_main_view()
         self._initialized_ok = True
 
