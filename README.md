@@ -397,6 +397,73 @@ A partir da v1.2.0, o `documents.db` reside em `\\192.168.3.180\BKP-Semas\` (ser
 
 4. **Rollback:** se algo der muito errado nos primeiros dias, voltar para `DocumentManager.exe` v1.1.0 em cada estacao. Os dados acumulados na v1.2.0 ficam no servidor, mas cada estacao volta a usar seu `documents.db` local antigo (defasado desde antes do upgrade). **Antes** do rollback, exporte os dados do servidor (`\\192.168.3.180\BKP-Semas\documents.db`) e reimporte numa unica estacao escolhida como fonte canonica — senao cada estacao fica com versoes diferentes e divergentes da base. **Valide o checklist manual antes de fazer rollout amplo** pra evitar precisar deste caminho.
 
+## Sincronizar dados de um .db local pro servidor
+
+Quando um arquivo `documents.db` "remanescente" precisa ter seus dados consolidados no banco central do servidor (estacao desativada, backup antigo, base offline), use o script `scripts/sync_local_to_server.py`.
+
+### Pre-requisitos
+
+- Python e venv do projeto ativos (`pip install -r requirements.txt`)
+- `.env` na raiz do projeto configurado com as variaveis do servidor (DB_SERVER, DB_USER, DB_PASSWORD etc.)
+- Caminho do `.db` de origem em maos
+
+### Comando
+
+```cmd
+venv\Scripts\python scripts\sync_local_to_server.py <caminho_do_db>
+```
+
+Flags:
+
+- `-f` / `--force` — em conflito de `qr_code`, source sobrescreve servidor (default: servidor vence)
+- `--log-dir DIR` — onde salvar o log da execucao (default: `C:\CPD\Logs`)
+
+### Exemplos
+
+```cmd
+venv\Scripts\python scripts\sync_local_to_server.py D:\backups\estacao03.db
+
+venv\Scripts\python scripts\sync_local_to_server.py D:\backups\estacao03.db -f
+
+venv\Scripts\python scripts\sync_local_to_server.py "C:\Users\joao\Desktop\old.db" --log-dir D:\sync_logs
+```
+
+### O que o script faz
+
+- Le todas as linhas de `documents` do `.db` local (read-only — nunca modifica o source)
+- Pra cada linha, busca no servidor pelo `qr_code` (UNIQUE)
+- Se nao existe -> insere os 6 campos (`qr_code, shelf, box, rack, classification, process`)
+- Se existe e for **identica** -> pula
+- Se existe mas algum campo difere:
+  - Modo default -> pula e loga como "conflito" (servidor preservado)
+  - Modo `-f` -> atualiza o servidor com os 6 campos do source e bate o `updated_at`
+
+### Saida esperada
+
+Cada execucao gera um log em `C:\CPD\Logs\sync_YYYY-MM-DD_HHMMSS.log` com o mesmo conteudo que aparece no terminal:
+
+```
+[2026-04-29 14:23:01] [INFO] === Sync iniciado ===
+[2026-04-29 14:23:01] [INFO] Source:  D:\backups\estacao03.db
+[2026-04-29 14:23:01] [INFO] Destino: \\AMZ-GD-02\Teste\documents.db
+[2026-04-29 14:23:01] [INFO] Modo:    server-wins (default)
+[2026-04-29 14:23:02] [INFO] Linhas no source: 247
+[2026-04-29 14:23:03] [WARN] Conflito qr_code=DOC042
+                              source:   shelf=5, ...
+                              servidor: shelf=7, ...
+                              acao: mantido servidor (rode com -f pra sobrescrever)
+[2026-04-29 14:23:04] [INFO] === Resumo ===
+[2026-04-29 14:23:04] [INFO] Total processado:  247
+[2026-04-29 14:23:04] [INFO] Inseridos:         231
+[2026-04-29 14:23:04] [INFO] Identicos (skip):  15
+[2026-04-29 14:23:04] [INFO] Conflitos (skip):  1
+[2026-04-29 14:23:04] [INFO] Sobrescritos:      0
+```
+
+### Reexecucao
+
+O script e idempotente — pode rodar varias vezes seguidas. Linhas ja no servidor sao puladas. Util se a primeira execucao interromper por queda de rede.
+
 ## Tecnologias Utilizadas
 
 | Tecnologia | Uso |
