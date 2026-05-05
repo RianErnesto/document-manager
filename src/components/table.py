@@ -62,7 +62,7 @@ class DataTable(ctk.CTkFrame):
         # Frame para botões de ação (exposto para uso externo, oculto inicialmente)
         self.action_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
 
-        # Campo de busca
+        # Campo de busca geral
         search_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
         search_frame.pack(side="right")
 
@@ -83,11 +83,38 @@ class DataTable(ctk.CTkFrame):
             border_color=COLORS["primary"],
             border_width=2,
             corner_radius=DIMENSIONS["border_radius"],
-            placeholder_text="Código QR, estante, caixa...",
+            placeholder_text="Código QR, estante, classificação...",
             placeholder_text_color=COLORS["text_secondary"],
         )
         self._search_entry.pack(side="left")
         self._search_entry.bind("<KeyRelease>", self._on_search)
+
+        # Campo de busca específico por caixa
+        box_search_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        box_search_frame.pack(side="right", padx=(0, 12))
+
+        box_label = ctk.CTkLabel(
+            box_search_frame,
+            text="Caixa:",
+            font=FONTS["body_bold"],
+            text_color=COLORS["text"],
+        )
+        box_label.pack(side="left", padx=(0, 8))
+
+        self._box_search_entry = ctk.CTkEntry(
+            box_search_frame,
+            width=100,
+            height=36,
+            font=FONTS["body"],
+            fg_color=COLORS["surface"],
+            border_color=COLORS["primary"],
+            border_width=2,
+            corner_radius=DIMENSIONS["border_radius"],
+            placeholder_text="Nº",
+            placeholder_text_color=COLORS["text_secondary"],
+        )
+        self._box_search_entry.pack(side="left")
+        self._box_search_entry.bind("<KeyRelease>", self._on_search)
 
         # Frame da tabela
         table_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -185,20 +212,21 @@ class DataTable(ctk.CTkFrame):
         self._count_label.pack(side="right")
 
     def _on_search(self, *args):
-        """Filtra os dados baseado na busca."""
+        """Filtra os dados pelos dois campos: busca geral + caixa."""
         search_text = self._search_entry.get().lower()
+        box_text = self._box_search_entry.get().lower().strip()
 
-        if not search_text:
-            self._filtered_data = self._data.copy()
-        else:
-            self._filtered_data = [
-                row for row in self._data
-                if any(
-                    search_text in str(row.get(col["key"], "")).lower()
-                    for col in self._columns
-                )
-            ]
+        def matches(row):
+            if search_text and not any(
+                search_text in str(row.get(col["key"], "")).lower()
+                for col in self._columns
+            ):
+                return False
+            if box_text and box_text not in str(row.get("box", "")).lower():
+                return False
+            return True
 
+        self._filtered_data = [row for row in self._data if matches(row)]
         self._refresh_display()
 
     def _sort_by(self, column: str):
